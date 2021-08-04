@@ -2,70 +2,104 @@
 title: "R Notebook"
 output: html_notebook
 ---
+1. Conociendo los datos
 ```{r}
+#1.1 Cargue el paquete tidyverse
 library(tidyverse)
 library(ggthemes)
+
+#1.2 Cargar archivo deaths_handwashing.csv
 yearly<-read_csv("deaths_handwashing.csv")
+
+#1.3 Imprimir yearly
+yearly
+```
+2. El alarmante numero de muertes
+```{r}
+#2.1 Use mutate para para agregar la columna proportion_deaths a yearly
+yearly<- yearly %>%
+  group_by(clinic) %>%
+  mutate(proportion_deaths=deaths/births)
+
+#2.2 Imprima yearly
 yearly
 ```
 ```{r}
 yearly %>%
-  group_by(clinic) %>%
-  mutate(proportion_deaths=deaths/births)
-```
-```{r}
-yearly %>%
-  mutate(proportion_deaths=deaths/births)%>%
   ggplot(aes(x=year, y=proportion_deaths,group=clinic))+
   geom_line(aes(color=clinic))+
-  geom_point(aes(color=clinic))
+  geom_point(aes(color=clinic))+
+  labs(title = "Muertes por año",
+       subtitle = "Proporcion de muertes anuales por clinica",
+       x="Año",
+       y="Muertes/Nacimientos",
+       colors="Clinica")+
+  theme_economist()
 ```
-
+4. Comienza el lavado de manos
 ```{r}
 library(scales)
+#4.1 Cargue los datos mensuales de la Clínica 1
 monthly<-read_csv("deaths_clinic_1.csv")
+#4.2 Agregue la columna proportion_deaths a monthly
 monthly<-monthly %>%
   mutate(proportions_death=deaths/births) %>%
   mutate(proportions_percentage=label_percent()(deaths/births)) %>%
   mutate(year=as.Date(date,"%y,%m,%d"))
-
+#4.3 Imprima las primeras filas de monthly usando la función head()
 head(monthly)
 ```
-
+5. El efecto del lavado de manos
 ```{r}
+#5.1 Haga una gráfica lineal de proportion_deaths por fecha
 monthly%>%
   ggplot(aes(x=date, y=proportions_death))+
   geom_line()
 
+#5.2 Utilice la función labs para dar al eje x & al eje y una estética a las etiquetas
 monthly%>%
-  ggplot(aes(x=date, y=proportions_death, color= proportions_death))+
+  ggplot(aes(x=date, y=proportions_death))+
   geom_line()+
-  labs(title = "Linea de tiempo muertes en proporcion", x="Fecha", y="Propocion de muertes")
+  geom_point(aes(color=proportions_death))+
+  labs(title = "Timeline", 
+       subtitle = "Muertes vs nacimientos",
+       x="Fecha", 
+       y="Propocion de muertes",
+       color="Proporcion muertes")+
+  theme_gdocs()
 ```
 6. Los resultados del lavado de manos
 ```{r}
-#6.1
+#6.1 Agregue una columna TRUE/FALSE a monthly
 view(monthly)
 monthly<-monthly %>%
 mutate(handwashing_started = date >= as.Date('1847-01-01'))
 
+#6.2 Haga una gráfica lineal de proportion_deaths
 monthly %>%
   ggplot(aes(x=date, y=proportions_death, color=handwashing_started))+
-  geom_line(aes(linetype=TRUE),size=1.5, alpha=0.8)+
+  geom_line()+
+  geom_point()
+
+#6.3 Utilice la función labs para dar al eje x & al eje y una estética a las etiquetas
+monthly %>%
+  ggplot(aes(x=date, y=proportions_death, color=handwashing_started))+
+  geom_line()+
   geom_point()+
   labs(title = "Linea de tiempo muertes en proporcion",
        subtitle = "El cambio desde 1847 cuando se inicio el lavado de manos",
        x="Fecha", 
        y="Propocion de muertes",
        color="Lavado de manos")+
-  theme_fivethirtyeight()+
-  theme(axis.title = element_text())+
-  scale_linetype_manual(values = c("dashed","solid"), guide="none")
-  ```
+  theme_fivethirtyeight()
+  
+```
 7. ¿Más lavado de manos, menos muertes?
 ```{r}
 month_summary<-monthly %>%
   group_by(handwashing_started) %>%
   summarise(proportion=mean(proportions_death,na.rm=TRUE))
+
+month_summary
 ```
 
